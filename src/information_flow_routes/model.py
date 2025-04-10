@@ -4,12 +4,25 @@ import nnsight
 import torch
 from beartype import beartype
 from fancy_einsum import einsum
+from transformers import PreTrainedTokenizerBase
+
+
+@beartype
+def tokens_to_strings(
+    tokenizer: PreTrainedTokenizerBase, tokens: torch.Tensor
+) -> list[str]:
+    # TODO: manage batch processing
+    tokens = tokens[0]
+    return [tokenizer.decode(token) for token in tokens.tolist()]
 
 
 @beartype
 def capture_inference_components(
     model: nnsight.LanguageModel, tokens: torch.Tensor
 ) -> list[dict[str, typing.Any]]:
+    BATCH_SIZE = 1
+
+    # TODO: manage batch processing
     num_layers = len(model.model.layers)
     hidden_size = model.config.hidden_size
     num_attention_heads = model.config.num_attention_heads
@@ -35,8 +48,10 @@ def capture_inference_components(
                     },
                     "attention": {
                         "projections": {
-                            "value": layer.self_attn.v_proj.output.squeeze(0)
-                            .view(num_token, num_key_value_heads, head_dim)
+                            # TODO: manage batch processing
+                            "value": layer.self_attn.v_proj.output.view(
+                                BATCH_SIZE, num_token, num_key_value_heads, head_dim
+                            )
                             .repeat_interleave(
                                 num_attention_heads // num_key_value_heads, dim=-2
                             )
@@ -60,7 +75,8 @@ def capture_inference_components(
 
 @beartype
 def decompose_attention(cache: dict[str, typing.Any]) -> torch.Tensor:
-    attention_value = cache["attention"]["projections"]["value"].value
+    # TODO: manage batch processing
+    attention_value = cache["attention"]["projections"]["value"].value[0]
     attention_output_weights = cache["attention"]["output_weights"].value
     attention_scores = cache["attention"]["scores"].value
 

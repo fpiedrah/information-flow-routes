@@ -22,6 +22,11 @@ class Component(str, enum.Enum):
     POST_ATTENTION_RESIDUAL = "RPA"
     POST_FEED_FORWARD_RESIDUAL = "RPFF"
 
+    # TOKEN = "X0"
+    # FEED_FORWARD = "M"
+    # POST_ATTENTION_RESIDUAL = "A"
+    # POST_FEED_FORWARD_RESIDUAL = "I"
+
     def __str__(self):
         return self.value
 
@@ -50,18 +55,18 @@ class InformationFlowGraph(networkx.DiGraph):
         return self._feed_forward_residual_node_name(self.num_layers - 1, token_index)
 
     def _attention_residual_node_name(self, layer_index: int, token_index: int) -> str:
-        return f"{Component.POST_ATTENTION_RESIDUAL}-{layer_index}-{token_index}"
+        return f"{Component.POST_ATTENTION_RESIDUAL}[{layer_index}-{token_index}]"
 
     def _feed_forward_node_name(self, layer_index: int, token_index: int) -> str:
-        return f"{Component.FEED_FORWARD}-{layer_index}-{token_index}"
+        return f"{Component.FEED_FORWARD}[{layer_index}-{token_index}]"
 
     def _feed_forward_residual_node_name(
         self, layer_index: int, token_index: int
     ) -> str:
-        return f"{Component.POST_FEED_FORWARD_RESIDUAL}-{layer_index}-{token_index}"
+        return f"{Component.POST_FEED_FORWARD_RESIDUAL}[{layer_index}-{token_index}]"
 
     def _token_node_name(self, token_index: int) -> str:
-        return f"{Component.TOKEN}-{token_index}"
+        return f"{Component.TOKEN}[0-{token_index}]"
 
     def _build(self) -> None:
         for layer_index, token_index in itertools.product(
@@ -177,7 +182,7 @@ def construct_information_flow_graph(
         for source_token in range(num_tokens):
             for target_token in range(num_tokens):
                 contribution = (
-                    attention_contributions[BATCH_INDEX, source_token, target_token]
+                    attention_contributions[BATCH_INDEX, target_token, source_token]
                     .sum()
                     .item()
                 )

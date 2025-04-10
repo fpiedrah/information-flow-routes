@@ -106,7 +106,7 @@ def compute_attention_contributions(
 
     attention_contributions = einops.rearrange(
         attention_contributions,
-        "key_pos attn_head batch token_pos" " -> batch token_pos key_pos attn_head",
+        "key_pos attn_head batch token_pos -> batch token_pos key_pos attn_head",
     )
 
     return attention_contributions, residual_contributions
@@ -183,6 +183,7 @@ def threshold_and_renormalize_contributions(
     )
 
     return (
-        component_contributions / denominator.reshape(denominator.shape + (1,) * bound_dim),
+        component_contributions
+        / denominator.reshape(denominator.shape + (1,) * bound_dim),
         residual_contributions / denominator,
     )
