@@ -1,65 +1,35 @@
-[build-system]
-build-backend = "hatchling.build"
-requires = [ "hatchling" ]
-
 [project]
 name = "information-flow-routes"
 version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
+description = "Ferrando and Voita's Information Flow Routes using nnsight"
 authors = [
-  { name = "Francisco Piedrahita Velez", email = "fpiedrah@brown.edu" },
+    {name = "Francisco Piedrahita Velez", email = "fpiedrah@brown.edu"},
 ]
-requires-python = ">=3.12.9"
-classifiers = [ "Programming Language :: Python :: 3 :: Only", "Programming Language :: Python :: 3.12" ]
-dependencies = [
-  "beartype>=0.20.2",
-  "einops>=0.8.1",
-  "fancy-einsum>=0.0.3",
-  "matplotlib>=3.10.1",
-  "networkx>=3.4.2",
-  "nnsight>=0.4.5",
-  "seaborn>=0.13.2",
-  "torch>=2.6",
-]
+dependencies = ["beartype>=0.20.2", "einops>=0.8.1", "fancy-einsum>=0.0.3", "matplotlib>=3.10.1", "networkx>=3.4.2", "nnsight>=0.4.5", "seaborn>=0.13.2", "torch>=2.6.0"]
+requires-python = ">=3.12"
+readme = "README.md"
+license = {text = "BSD 3"}
 
-[tool.uv.sources]
-torch = [
-  { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
-  { index = "pytorch-cu124", marker = "sys_platform == 'linux'" },
-]
-
-[[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
-
-[[tool.uv.index]]
-name = "pytorch-cu124"
-url = "https://download.pytorch.org/whl/cu124"
-explicit = true
-
-[dependency-groups]
-dev = [
-    "coverage>=7.8.0",
-    "jupyterlab>=4.4.0",
-    "pytest>=8.3.5",
-]
-lint = [
+[project.optional-dependencies]
+linting = [
     "black>=25.1.0",
     "isort>=6.0.1",
     "mypy>=1.15.0",
     "nbqa>=1.9.1",
-    "ruff>=0.11.4",
+    "ruff>=0.11.5",
 ]
+testing = [
+    "coverage>=7.8.0",
+    "pytest>=8.3.5",
+]
+notebooks = [
+    "jupyterlab>=4.4.0",
+    "marimo>=0.12.8",
+]
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "-ra -q"
 
-
-[tool.coverage.run]
-source = ["information_flow_routes"]
-
-[tool.coverage.report]
-show_missing = true
+[tool.pdm]
+distribution = true

@@ -1,19 +1,17 @@
 import enum
+import functools
 import itertools
+import operator
 
 import networkx
 import nnsight
 from beartype import beartype
 
 from information_flow_routes.metrics import (
-    compute_attention_contributions,
-    compute_feed_forward_contributions,
-    threshold_and_renormalize_contributions,
-)
-from information_flow_routes.model import (
-    capture_inference_components,
-    decompose_attention,
-)
+    compute_attention_contributions, compute_feed_forward_contributions,
+    threshold_and_renormalize_contributions)
+from information_flow_routes.model import (capture_inference_components,
+                                           decompose_attention)
 
 
 class Component(str, enum.Enum):
@@ -50,18 +48,18 @@ class Graph(networkx.DiGraph):
         super().__init__(self)
 
         if num_layers and num_tokens:
-            self._num_layers = num_layers
-            self._num_tokens = num_tokens
+            self.graph["num_layers"] = num_layers
+            self.graph["num_tokens"] = num_tokens
 
             self._build()
 
     @property
     def num_layers(self):
-        return self._num_layers
+        return self.graph["num_layers"]
 
     @property
     def num_tokens(self):
-        return self._num_tokens
+        return self.graph["num_tokens"]
 
     def get_output_node(self, token_index: int) -> str:
         return Component.POST_FEED_FORWARD_RESIDUAL.name(
@@ -233,7 +231,7 @@ def construct_information_flow_graph(
 
 def find_prediction_paths(
     graph: Graph, root_token_index: int, threshold: float
-) -> list[Graph]:
+) -> Graph:
     num_layers = graph.num_layers
     num_tokens = graph.num_tokens
 
@@ -253,10 +251,24 @@ def find_prediction_paths(
         raise ValueError()
 
     return graph_search.edge_subgraph(
-        networkx.edge_dfs(
-            graph_search, source=new_graph.get_output_node(root_token_index)
-        )
+        networkx.edge_dfs(graph_search, source=graph.get_output_node(root_token_index))
     )
 
 
+def subgraph_from_token_nodes(
+    graph: Graph, root_token_indices: list[int], thresholde: float
+) -> Graph:
+    if not root_token_indices:
+        raise ValueError()
 
+    edges = functools.reduce(
+        operator.add,
+        [
+            list(
+                networkx.dfs_edges(graph.reverse(), source=Component.TOKEN.name(index))
+            )
+            for index in root_token_indices
+        ],
+    )
+
+    return graph.reverse().edge_subgraph(edges)

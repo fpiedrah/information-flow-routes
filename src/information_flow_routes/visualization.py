@@ -33,11 +33,9 @@ class Renderer:
         num_layers: int,
         string_tokens: list[str],
         target_token_index: int,
-        threshold: float,
     ) -> None:
         self.string_tokens: list[str] = self._process_tokens(string_tokens)
         self.target_token_index: int = target_token_index
-        self.threshold: float = threshold
         self.num_layers: int = num_layers
         self.num_tokens: int = len(string_tokens)
 
@@ -159,7 +157,10 @@ class Renderer:
                     x = self._x_scale(token_index)
                     y = self._y_scale(layer_index) + self.render_params["cell_h"] / 4
                 case Component.FEED_FORWARD:
-                    x = self._x_scale(token_index) + 5 * self.render_params["cell_w"] / 16
+                    x = (
+                        self._x_scale(token_index)
+                        + 5 * self.render_params["cell_w"] / 16
+                    )
                     y = self._y_scale(layer_index)
                 case Component.POST_FEED_FORWARD_RESIDUAL:
                     x = self._x_scale(token_index)
