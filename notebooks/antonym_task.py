@@ -9,13 +9,15 @@ def _():
     import nnsight
 
     from information_flow_routes.graph import (
-        Component, Graph, construct_information_flow_graph,
-        find_prediction_paths, subgraph_from_token_nodes)
+        Component,
+        Graph,
+        construct_information_flow_graph,
+        find_prediction_paths,
+        subgraph_from_token_nodes,
+    )
     from information_flow_routes.model import tokens_to_strings
-    from information_flow_routes.utilities import \
-        find_token_substring_positions
+    from information_flow_routes.utilities import find_token_substring_positions
     from information_flow_routes.visualization import Renderer
-
     return (
         Component,
         Graph,
@@ -93,7 +95,9 @@ def _(
         instructed_prompt,
         return_tensors="pt",
     )["input_ids"]
-    instructed_string_tokens = tokens_to_strings(model.tokenizer, instructed_tokens)
+    instructed_string_tokens = tokens_to_strings(
+        model.tokenizer, instructed_tokens
+    )
 
     instructed_renderer = Renderer(
         model.config.num_hidden_layers,

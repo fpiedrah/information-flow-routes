@@ -272,3 +272,9 @@ def subgraph_from_token_nodes(
     )
 
     return graph.reverse().edge_subgraph(edges)
+
+
+def subgraph_from_counterfactual(factual_graph: Graph, counterfactual_graph: Graph):
+    return factual_graph.edge_subgraph(
+        set(factual_graph.edges) - set(counterfactual_graph.edges)
+    )
