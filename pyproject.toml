@@ -16,7 +16,6 @@ dependencies = [
   "beartype>=0.20.2",
   "einops>=0.8.1",
   "fancy-einsum>=0.0.3",
-  "jaxtyping>=0.3.1",
   "matplotlib>=3.10.1",
   "networkx>=3.4.2",
   "nnsight>=0.4.5",
@@ -44,7 +43,6 @@ explicit = true
 dev = [
     "coverage>=7.8.0",
     "jupyterlab>=4.4.0",
-    "marimo>=0.12.6",
     "pytest>=8.3.5",
 ]
 lint = [
