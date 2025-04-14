@@ -9,10 +9,11 @@ def _():
     import nnsight
 
     from information_flow_routes.graph import (
-        construct_information_flow_graph, find_prediction_paths)
+        construct_information_flow_graph,
+        find_prediction_paths,
+    )
     from information_flow_routes.model import tokens_to_strings
-    from information_flow_routes.utilities import \
-        find_token_substring_positions
+    from information_flow_routes.utilities import find_token_substring_positions
     from information_flow_routes.visualization import Renderer
 
     return (

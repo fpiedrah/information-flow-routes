@@ -8,10 +8,14 @@ import nnsight
 from beartype import beartype
 
 from information_flow_routes.metrics import (
-    compute_attention_contributions, compute_feed_forward_contributions,
-    threshold_and_renormalize_contributions)
-from information_flow_routes.model import (capture_inference_components,
-                                           decompose_attention)
+    compute_attention_contributions,
+    compute_feed_forward_contributions,
+    threshold_and_renormalize_contributions,
+)
+from information_flow_routes.model import (
+    capture_inference_components,
+    decompose_attention,
+)
 
 
 class Component(str, enum.Enum):
@@ -256,22 +260,27 @@ def find_prediction_paths(
 
 
 def subgraph_from_token_nodes(
-    graph: Graph, root_token_indices: list[int], thresholde: float
+    graph: Graph, root_token_indices: list[int], thresholde: float, strict: bool = False
 ) -> Graph:
     if not root_token_indices:
-        raise ValueError()
+        raise ValueError("root_token_indices must not be empty.")
 
-    edges = functools.reduce(
-        operator.add,
-        [
-            list(
-                networkx.dfs_edges(graph.reverse(), source=Component.TOKEN.name(index))
-            )
-            for index in root_token_indices
-        ],
-    )
+    edges = []
+    num_tokens = graph.num_tokens
+    reversed_graph = graph.reverse()
 
-    return graph.reverse().edge_subgraph(edges)
+    for index in root_token_indices:
+        source = Component.TOKEN.name(index)
+        target = graph.get_output_node(num_tokens - 1)
+
+        if strict:
+            path = networkx.dijkstra_path(reversed_graph, source=source, target=target)
+            edges.extend(list(zip(path, path[1:])))
+
+        if not strict:
+            edges.extend(list(networkx.dfs_edges(reversed_graph, source=source)))
+
+    return reversed_graph.edge_subgraph(edges)
 
 
 def subgraph_from_counterfactual(factual_graph: Graph, counterfactual_graph: Graph):

@@ -2,11 +2,13 @@ import pytest
 import torch
 
 from information_flow_routes.metrics import (
-    compute_attention_contributions, compute_contributions,
+    compute_attention_contributions,
+    compute_contributions,
     compute_contributions_with_residual,
     compute_decomposed_feed_forward_contributions,
     compute_feed_forward_contributions,
-    threshold_and_renormalize_contributions)
+    threshold_and_renormalize_contributions,
+)
 
 EPSILON = 1e-5
 

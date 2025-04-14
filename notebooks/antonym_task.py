@@ -18,6 +18,7 @@ def _():
     from information_flow_routes.model import tokens_to_strings
     from information_flow_routes.utilities import find_token_substring_positions
     from information_flow_routes.visualization import Renderer
+
     return (
         Component,
         Graph,
@@ -95,9 +96,7 @@ def _(
         instructed_prompt,
         return_tensors="pt",
     )["input_ids"]
-    instructed_string_tokens = tokens_to_strings(
-        model.tokenizer, instructed_tokens
-    )
+    instructed_string_tokens = tokens_to_strings(model.tokenizer, instructed_tokens)
 
     instructed_renderer = Renderer(
         model.config.num_hidden_layers,
@@ -163,6 +162,35 @@ def _(
     ZERO_SHOT_THRESHOLD,
     construct_information_flow_graph,
     find_prediction_paths,
+    instructed_antonym_root_indices,
+    instructed_prompt,
+    instructed_renderer,
+    instructed_string_tokens,
+    model,
+    subgraph_from_token_nodes,
+):
+    instructed_renderer.plot(
+        subgraph_from_token_nodes(
+            find_prediction_paths(
+                construct_information_flow_graph(
+                    model, instructed_prompt, ZERO_SHOT_THRESHOLD
+                ),
+                len(instructed_string_tokens) - 1,
+                ZERO_SHOT_THRESHOLD,
+            ),
+            instructed_antonym_root_indices,
+            ZERO_SHOT_THRESHOLD,
+            strict=True,
+        )
+    )
+    return
+
+
+@app.cell
+def _(
+    ZERO_SHOT_THRESHOLD,
+    construct_information_flow_graph,
+    find_prediction_paths,
     find_token_substring_positions,
     instructed_prompt,
     instructed_renderer,
@@ -192,6 +220,35 @@ def _(
         )
     )
     return instructed_massive_root_indices, instructed_massive_substring
+
+
+@app.cell
+def _(
+    ZERO_SHOT_THRESHOLD,
+    construct_information_flow_graph,
+    find_prediction_paths,
+    instructed_massive_root_indices,
+    instructed_prompt,
+    instructed_renderer,
+    instructed_string_tokens,
+    model,
+    subgraph_from_token_nodes,
+):
+    instructed_renderer.plot(
+        subgraph_from_token_nodes(
+            find_prediction_paths(
+                construct_information_flow_graph(
+                    model, instructed_prompt, ZERO_SHOT_THRESHOLD
+                ),
+                len(instructed_string_tokens) - 1,
+                ZERO_SHOT_THRESHOLD,
+            ),
+            instructed_massive_root_indices,
+            ZERO_SHOT_THRESHOLD,
+            strict=True,
+        )
+    )
+    return
 
 
 @app.cell
