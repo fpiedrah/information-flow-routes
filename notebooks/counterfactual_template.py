@@ -59,7 +59,7 @@ def _(marimo, os):
     DATASET_PATH = os.path.join(DATASET_BASE_PATH, DATASET_FILE)
 
     EXPORT_PDF = CLI_ARGUMENTS.get("EXPORT_PDF", False)
-    EXPORT_BASE_PATH = CLI_ARGUMENTS.get("EXPORT_PATH", "./assets")
+    EXPORT_BASE_PATH = CLI_ARGUMENTS.get("EXPORT_BASE_PATH", "./assets")
     EXPORT_PATH = os.path.join(EXPORT_BASE_PATH, TASK_IDENTIFIER)
 
     if EXPORT_PDF:
