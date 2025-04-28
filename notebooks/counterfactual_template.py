@@ -62,7 +62,6 @@ def _(marimo, os):
     EXPORT_PATH = CLI_ARGUMENTS.get("EXPORT_PATH", "./assets")
 
     if EXPORT_PDF:
-        os.makedirs(EXPORT_PATH, exist_ok=True)
         os.makedirs(os.path.join(EXPORT_PATH, TASK_IDENTIFIER), exist_ok=True)
 
     # PROMPT CONFIGURATION
