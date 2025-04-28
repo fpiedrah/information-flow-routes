@@ -63,7 +63,7 @@ def _(marimo, os):
 
     if EXPORT_PDF:
         os.makedirs(EXPORT_PATH, exist_ok=True)
-        os.makedirs(os.path.join(EXPORT_PATH, TASK_IDENTIFIER))
+        os.makedirs(os.path.join(EXPORT_PATH, TASK_IDENTIFIER), exist_ok=True)
 
     # PROMPT CONFIGURATION
     INSTRUCTIONS = CLI_ARGUMENTS.get(
