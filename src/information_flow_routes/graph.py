@@ -147,6 +147,12 @@ class Graph(networkx.DiGraph):
             weight,
         )
 
+    def __sub__(self, other: "Graph") -> "Graph":
+        if not isinstance(other, Graph):
+            raise NotImplementedError
+
+        return compute_weight_difference(original_graph=other, updated_graph=self)
+
 
 def construct_information_flow_graph(
     model: nnsight.LanguageModel,
@@ -249,41 +255,90 @@ def find_prediction_paths(
     )
 
     if root_token_index > num_tokens:
-        raise ValueError()
+        raise ValueError(
+            f"root_token_index {root_token_index} >= num_tokens {num_tokens}"
+        )
 
     if root_token_index < 0:
-        raise ValueError()
+        raise ValueError(f"root_token_index {root_token_index} < 0")
 
     return graph_search.edge_subgraph(
         networkx.edge_dfs(graph_search, source=graph.get_output_node(root_token_index))
     )
 
 
-def subgraph_from_token_nodes(
-    graph: Graph, root_token_indices: list[int], thresholde: float, strict: bool = False
+def average_edge_weights(
+    graphs: list[Graph], num_layers: int, num_tokens: int
 ) -> Graph:
-    if not root_token_indices:
-        raise ValueError("root_token_indices must not be empty.")
+    edge_data = {}
+    new_graph = Graph(num_layers, num_tokens)
 
-    edges = []
-    num_tokens = graph.num_tokens
-    reversed_graph = graph.reverse()
+    for graph in graphs:
+        for source, target, data in graph.edges(data=True):
+            weight = data.get("weight", 0.0)
 
-    for index in root_token_indices:
-        source = Component.TOKEN.name(index)
-        target = graph.get_output_node(num_tokens - 1)
+            if (source, target) not in edge_data:
+                edge_data[(source, target)] = {"weight_sum": 0.0, "count": 0}
 
-        if strict:
-            path = networkx.dijkstra_path(reversed_graph, source=source, target=target)
-            edges.extend(list(zip(path, path[1:])))
+            edge_data[(source, target)]["weight_sum"] += weight
+            edge_data[(source, target)]["count"] += 1
 
-        if not strict:
-            edges.extend(list(networkx.dfs_edges(reversed_graph, source=source)))
+    for (source, target), data in edge_data.items():
+        avg_weight = data["weight_sum"] / data["count"]
+        new_graph.add_edge(source, target, weight=avg_weight)
 
-    return reversed_graph.edge_subgraph(edges)
+    return new_graph
 
 
-def subgraph_from_counterfactual(factual_graph: Graph, counterfactual_graph: Graph):
-    return factual_graph.edge_subgraph(
-        set(factual_graph.edges) - set(counterfactual_graph.edges)
-    )
+def compute_weight_difference(
+    factual_graph: Graph, counterfactual_graph: Graph
+) -> Graph:
+    if (
+        factual_graph.num_layers != counterfactual_graph.num_layers
+        or factual_graph.num_tokens != counterfactual_graph.num_tokens
+    ):
+        raise ValueError("Graphs must have the same number of layers and tokens")
+
+    factual_nodes = set(factual_graph.nodes())
+    counterfactual_nodes = set(counterfactual_graph.nodes())
+
+    if factual_nodes != counterfactual_nodes:
+        different_nodes = factual_nodes.symmetric_difference(counterfactual_nodes)
+        raise ValueError(f"Graphs must have identical nodes. Found {len(different_nodes)} different nodes.")
+
+    factual_edges = set(factual_graph.edges())
+    counterfactual_edges = set(counterfactual_graph.edges())
+    
+    if factual_edges != counterfactual_edges:
+        different_edges = factual_edges.symmetric_difference(counterfactual_edges)
+        raise ValueError(f"Graphs must have identical edge structure. Found {len(different_edges)} different edges.")
+
+    causal_graph = Graph(counterfactual_graph.num_layers, counterfactual_graph.num_tokens)
+    
+    for source, target in factual_edges | counterfactual_edges:
+        counterfactual_weight = counterfactual_graph[source][target].get("weight", 0.0)
+        factual_weight = factual_graph[source][target].get("weight", 0.0)
+        
+        causal_graph.add_edge(source, target, weight=factual_weight - counterfactual_weight)
+
+    return causal_graph
+
+def extract_causal_components(graph: Graph, threshold: float, reference_graph: Graph = None) -> Graph:
+    causal_graph = Graph(graph.num_layers, graph.num_tokens)
+    causal_graph.add_nodes_from(graph.nodes())
+
+    for source, target, data in graph.edges(data=True):
+        weight = data.get("weight", 0)
+        
+        nodes_exist_in_reference = (
+            reference_graph is None or 
+            (reference_graph.has_node(source) and reference_graph.has_node(target))
+        )
+        
+        if weight > threshold and nodes_exist_in_reference:
+            causal_graph.add_edge(source, target, **data)
+
+    isolated_nodes = list(networkx.isolates(causal_graph))
+    causal_graph.remove_nodes_from(isolated_nodes)
+
+    return causal_graph
