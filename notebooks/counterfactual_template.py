@@ -6,6 +6,7 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
+    import collections
     import copy
     import json
     import os
@@ -26,6 +27,7 @@ def _():
     return (
         Renderer,
         average_edge_weights,
+        collections,
         compute_weight_difference,
         construct_information_flow_graph,
         copy,
@@ -132,14 +134,11 @@ def _(
     INSTRUCTIONS,
     MAX_NUM_PROMPTS,
     ZERO_SHOT_TEMPLATE,
+    collections,
     dataset,
     model,
     tokens_to_strings,
 ):
-    # FIND BETTER WAY TO DO THIS
-    num_zero_shot_tokens = len(model.tokenizer(INSTRUCTIONS)["input_ids"]) + 6
-
-
     def create_zero_shot_prompts(instructions, dataset):
         return [
             ZERO_SHOT_TEMPLATE.format(
@@ -161,13 +160,16 @@ def _(
         tokens_to_strings(model.tokenizer, tokens) for tokens in zero_shot_tokens
     ]
 
+    most_common_length = collections.Counter(
+        [len(tokens) for tokens in zero_shot_string_tokens]
+    ).most_common(1)[0][0]
 
     zero_shot_string_tokens, zero_shot_prompts = map(
         list,
         zip(
             *filter(
                 lambda token_prompt_pair: len(token_prompt_pair[0])
-                == num_zero_shot_tokens,
+                == most_common_length,
                 zip(zero_shot_string_tokens, zero_shot_prompts),
             )
         ),
@@ -179,7 +181,7 @@ def _(
     )
     return (
         create_zero_shot_prompts,
-        num_zero_shot_tokens,
+        most_common_length,
         zero_shot_prompts,
         zero_shot_string_tokens,
         zero_shot_tokens,
@@ -199,11 +201,12 @@ def _(
     marimo,
     model,
     num_layers,
-    num_zero_shot_tokens,
     os,
     zero_shot_prompts,
     zero_shot_string_tokens,
 ):
+    num_zero_shot_tokens = len(zero_shot_string_tokens[0])
+
     zero_shot_graphs = [
         construct_information_flow_graph(model, zero_shot_prompt, THRESHOLD)
         for zero_shot_prompt in marimo.status.progress_bar(zero_shot_prompts)
@@ -226,7 +229,7 @@ def _(
         export_pdf=EXPORT_PDF,
         filename=os.path.join(EXPORT_PATH, TASK_IDENTIFIER, "zero_shot_graph.pdf"),
     )
-    return zero_shot_graph, zero_shot_graphs
+    return num_zero_shot_tokens, zero_shot_graph, zero_shot_graphs
 
 
 @app.cell
