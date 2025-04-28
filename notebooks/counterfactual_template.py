@@ -43,7 +43,7 @@ def _():
 
 
 @app.cell
-def _(EXPORT_PATH, marimo, os):
+def _(marimo, os):
     # ARGUMENTS
     CLI_ARGUMENTS = marimo.cli_args()
 
@@ -60,7 +60,7 @@ def _(EXPORT_PATH, marimo, os):
 
     EXPORT_PDF = CLI_ARGUMENTS.get("EXPORT_PDF", False)
     EXPORT_BASE_PATH = CLI_ARGUMENTS.get("EXPORT_PATH", "./assets")
-    EXPORT_PATH = os.path.join(EXPORT_PATH, TASK_IDENTIFIER)
+    EXPORT_PATH = os.path.join(EXPORT_BASE_PATH, TASK_IDENTIFIER)
 
     if EXPORT_PDF:
         os.makedirs(EXPORT_PATH, exist_ok=True)
