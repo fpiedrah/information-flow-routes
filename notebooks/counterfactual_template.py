@@ -43,7 +43,7 @@ def _():
 
 
 @app.cell
-def _(marimo, os):
+def _(EXPORT_PATH, marimo, os):
     # ARGUMENTS
     CLI_ARGUMENTS = marimo.cli_args()
 
@@ -59,10 +59,11 @@ def _(marimo, os):
     DATASET_PATH = os.path.join(DATASET_BASE_PATH, DATASET_FILE)
 
     EXPORT_PDF = CLI_ARGUMENTS.get("EXPORT_PDF", False)
-    EXPORT_PATH = CLI_ARGUMENTS.get("EXPORT_PATH", "./assets")
+    EXPORT_BASE_PATH = CLI_ARGUMENTS.get("EXPORT_PATH", "./assets")
+    EXPORT_PATH = os.path.join(EXPORT_PATH, TASK_IDENTIFIER)
 
     if EXPORT_PDF:
-        os.makedirs(os.path.join(EXPORT_PATH, TASK_IDENTIFIER), exist_ok=True)
+        os.makedirs(EXPORT_PATH, exist_ok=True)
 
     # PROMPT CONFIGURATION
     INSTRUCTIONS = CLI_ARGUMENTS.get(
@@ -81,6 +82,7 @@ def _(marimo, os):
         DATASET_BASE_PATH,
         DATASET_FILE,
         DATASET_PATH,
+        EXPORT_BASE_PATH,
         EXPORT_PATH,
         EXPORT_PDF,
         INSTRUCTIONS,
