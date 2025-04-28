@@ -58,7 +58,7 @@ def _(marimo, os):
     DATASET_FILE = CLI_ARGUMENTS.get("DATASET_FILE", "003-sentence_case.json")
     DATASET_PATH = os.path.join(DATASET_BASE_PATH, DATASET_FILE)
 
-    EXPORT_PDF = CLI_ARGUMENTS.get("EXPORT_PDF", False)
+    EXPORT_PDF = CLI_ARGUMENTS.get("EXPORT_PDF", True)  # False)
     EXPORT_BASE_PATH = CLI_ARGUMENTS.get("EXPORT_BASE_PATH", "./assets")
     EXPORT_PATH = os.path.join(EXPORT_BASE_PATH, TASK_IDENTIFIER)
 
@@ -194,7 +194,6 @@ def _(
     EXPORT_PATH,
     EXPORT_PDF,
     Renderer,
-    TASK_IDENTIFIER,
     THRESHOLD,
     average_edge_weights,
     construct_information_flow_graph,
@@ -228,7 +227,7 @@ def _(
             THRESHOLD,
         ),
         export_pdf=EXPORT_PDF,
-        filename=os.path.join(EXPORT_PATH, TASK_IDENTIFIER, "zero_shot_graph.pdf"),
+        filename=os.path.join(EXPORT_PATH, "zero_shot_graph.pdf"),
     )
     return num_zero_shot_tokens, zero_shot_graph, zero_shot_graphs
 
@@ -358,7 +357,6 @@ def _(
     EXPORT_PATH,
     EXPORT_PDF,
     Renderer,
-    TASK_IDENTIFIER,
     THRESHOLD,
     average_edge_weights,
     construct_information_flow_graph,
@@ -393,7 +391,7 @@ def _(
             THRESHOLD,
         ),
         export_pdf=EXPORT_PDF,
-        filename=os.path.join(EXPORT_PATH, TASK_IDENTIFIER, "few_shot_graph.pdf"),
+        filename=os.path.join(EXPORT_PATH, "few_shot_graph.pdf"),
     )
     return few_shot_graph, few_shot_graphs, renderer
 
@@ -402,7 +400,6 @@ def _(
 def _(
     EXPORT_PATH,
     EXPORT_PDF,
-    TASK_IDENTIFIER,
     THRESHOLD,
     average_edge_weights,
     construct_information_flow_graph,
@@ -432,9 +429,7 @@ def _(
             THRESHOLD,
         ),
         export_pdf=EXPORT_PDF,
-        filename=os.path.join(
-            EXPORT_PATH, TASK_IDENTIFIER, "few_shot_counterfactual_graph.pdf"
-        ),
+        filename=os.path.join(EXPORT_PATH, "few_shot_counterfactual_graph.pdf"),
     )
     return few_shot_counterfactual_graph, few_shot_counterfactual_graphs
 
@@ -443,7 +438,6 @@ def _(
 def _(
     EXPORT_PATH,
     EXPORT_PDF,
-    TASK_IDENTIFIER,
     THRESHOLD,
     average_edge_weights,
     compute_weight_difference,
@@ -480,9 +474,7 @@ def _(
             ),
         ),
         export_pdf=EXPORT_PDF,
-        filename=os.path.join(
-            EXPORT_PATH, TASK_IDENTIFIER, "few_shot_causal_component.pdf"
-        ),
+        filename=os.path.join(EXPORT_PATH, "few_shot_causal_component.pdf"),
     )
     return few_shot_average_difference, few_shot_differences
 
