@@ -5,17 +5,17 @@ import operator
 
 import networkx
 import nnsight
+import torch
 from beartype import beartype
 
 from information_flow_routes.metrics import (
     compute_attention_contributions,
     compute_feed_forward_contributions,
+    decompose_attention,
+    decompose_feed_forward,
     threshold_and_renormalize_contributions,
 )
-from information_flow_routes.model import (
-    capture_inference_components,
-    decompose_attention,
-)
+from information_flow_routes.model import capture_inference_components
 
 
 class Component(str, enum.Enum):
@@ -196,6 +196,7 @@ def construct_information_flow_graph(
                     .sum()
                     .item()
                 )
+
                 information_flow_graph.update_attention_weight(
                     layer_index, source_token, target_token, contribution
                 )
@@ -230,6 +231,7 @@ def construct_information_flow_graph(
                 token_index,
                 feed_forward_contributions[0, token_index].item(),
             )
+
             information_flow_graph.update_residual_to_feed_forward_weight(
                 layer_index,
                 token_index,
@@ -304,37 +306,47 @@ def compute_weight_difference(
 
     if factual_nodes != counterfactual_nodes:
         different_nodes = factual_nodes.symmetric_difference(counterfactual_nodes)
-        raise ValueError(f"Graphs must have identical nodes. Found {len(different_nodes)} different nodes.")
+        raise ValueError(
+            f"Graphs must have identical nodes. Found {len(different_nodes)} different nodes."
+        )
 
     factual_edges = set(factual_graph.edges())
     counterfactual_edges = set(counterfactual_graph.edges())
-    
+
     if factual_edges != counterfactual_edges:
         different_edges = factual_edges.symmetric_difference(counterfactual_edges)
-        raise ValueError(f"Graphs must have identical edge structure. Found {len(different_edges)} different edges.")
+        raise ValueError(
+            f"Graphs must have identical edge structure. Found {len(different_edges)} different edges."
+        )
 
-    causal_graph = Graph(counterfactual_graph.num_layers, counterfactual_graph.num_tokens)
-    
+    causal_graph = Graph(
+        counterfactual_graph.num_layers, counterfactual_graph.num_tokens
+    )
+
     for source, target in factual_edges | counterfactual_edges:
         counterfactual_weight = counterfactual_graph[source][target].get("weight", 0.0)
         factual_weight = factual_graph[source][target].get("weight", 0.0)
-        
-        causal_graph.add_edge(source, target, weight=factual_weight - counterfactual_weight)
+
+        causal_graph.add_edge(
+            source, target, weight=factual_weight - counterfactual_weight
+        )
 
     return causal_graph
 
-def extract_causal_components(graph: Graph, threshold: float, reference_graph: Graph = None) -> Graph:
+
+def extract_causal_components(
+    graph: Graph, threshold: float, reference_graph: Graph = None
+) -> Graph:
     causal_graph = Graph(graph.num_layers, graph.num_tokens)
     causal_graph.add_nodes_from(graph.nodes())
 
     for source, target, data in graph.edges(data=True):
         weight = data.get("weight", 0)
-        
-        nodes_exist_in_reference = (
-            reference_graph is None or 
-            (reference_graph.has_node(source) and reference_graph.has_node(target))
+
+        nodes_exist_in_reference = reference_graph is None or (
+            reference_graph.has_node(source) and reference_graph.has_node(target)
         )
-        
+
         if weight > threshold and nodes_exist_in_reference:
             causal_graph.add_edge(source, target, **data)
 

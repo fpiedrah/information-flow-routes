@@ -3,7 +3,6 @@ import typing
 import nnsight
 import torch
 from beartype import beartype
-from fancy_einsum import einsum
 from transformers import PreTrainedTokenizerBase
 
 
@@ -65,33 +64,10 @@ def capture_inference_components(
                         "scores": layer.self_attn.output[1].squeeze(0).save(),
                     },
                     "feed_forward": {
+                        "activations": layer.mlp.down_proj.input.save(),
                         "output": layer.mlp.down_proj.output.save(),
                     },
                 }
             )
 
     return cache
-
-
-@beartype
-def decompose_attention(cache: dict[str, typing.Any]) -> torch.Tensor:
-    # TODO: manage batch processing
-    attention_value = cache["attention"]["projections"]["value"].value[0]
-    attention_output_weights = cache["attention"]["output_weights"].value
-    attention_scores = cache["attention"]["scores"].value
-
-    headwise_output_components = einsum(
-        "key_pos attn_head head_dim, attn_head query_pos key_pos"
-        "-> query_pos key_pos attn_head head_dim",
-        attention_value,
-        attention_scores,
-    )
-
-    decompose_attention = einsum(
-        "token_pos key_pos attn_head head_dim, attn_head head_dim hidden_dim"
-        "-> token_pos key_pos attn_head hidden_dim",
-        headwise_output_components,
-        attention_output_weights,
-    )
-
-    return decompose_attention

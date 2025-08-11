@@ -1,6 +1,9 @@
+import typing 
+
 import einops
 import torch
 from beartype import beartype
+from fancy_einsum import einsum
 
 
 @torch.inference_mode()
@@ -114,6 +117,31 @@ def compute_attention_contributions(
 
 @torch.inference_mode()
 @beartype
+def decompose_attention(cache: dict[str, typing.Any]) -> torch.Tensor:
+    # TODO: manage batch processing
+    attention_value = cache["attention"]["projections"]["value"].value[0]
+    attention_output_weights = cache["attention"]["output_weights"].value
+    attention_scores = cache["attention"]["scores"].value
+
+    headwise_output_components = einsum(
+        "key_pos attn_head head_dim, attn_head query_pos key_pos"
+        "-> query_pos key_pos attn_head head_dim",
+        attention_value,
+        attention_scores,
+    )
+
+    decomposed_attention = einsum(
+        "token_pos key_pos attn_head head_dim, attn_head head_dim hidden_dim"
+        "-> token_pos key_pos attn_head hidden_dim",
+        headwise_output_components,
+        attention_output_weights,
+    )
+
+    return decomposed_attention
+
+
+@torch.inference_mode()
+@beartype
 def compute_feed_forward_contributions(
     post_attention_residual: torch.Tensor,
     post_feed_forward_residual: torch.Tensor,
@@ -131,7 +159,7 @@ def compute_feed_forward_contributions(
 
 @torch.inference_mode()
 @beartype
-def compute_decomposed_feed_forward_contributions(
+def decompose_feed_forward(
     post_attention_residual: torch.Tensor,
     post_feed_forward_residual: torch.Tensor,
     decomposed_feed_forward: torch.Tensor,

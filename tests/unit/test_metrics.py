@@ -5,7 +5,7 @@ from information_flow_routes.metrics import (
     compute_attention_contributions,
     compute_contributions,
     compute_contributions_with_residual,
-    compute_decomposed_feed_forward_contributions,
+    decompose_feed_forward,
     compute_feed_forward_contributions,
     threshold_and_renormalize_contributions,
 )
@@ -100,13 +100,13 @@ def test_compute_feed_forward_contributions():
     assert torch.allclose(resid_contrib, expected_res_tensor, atol=EPSILON)
 
 
-def test_compute_decomposed_feed_forward_contributions():
+def test_decompose_feed_forward():
 
     post_attention_residual = torch.tensor([1.0, 1.0])
     post_feed_forward_residual = torch.tensor([4.0, 4.0])
 
     decomposed_feed_forward = torch.tensor([[1.0, 1.0], [2.0, 2.0]])
-    neuron_contrib, resid_contrib = compute_decomposed_feed_forward_contributions(
+    neuron_contrib, resid_contrib = decompose_feed_forward(
         post_attention_residual,
         post_feed_forward_residual,
         decomposed_feed_forward,
